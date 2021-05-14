@@ -472,6 +472,9 @@
         <p class="control is-expanded">
           <input id="host" on:keyup={hostkey} bind:value={host} class="input" type="text" placeholder="localhost:4444" />
         </p>
+        <p class="control is-expanded">
+          <input id="password" on:keyup={hostkey} bind:value={password} class="input" type="password" placeholder="password" />
+        </p>
         <p class="control">
           <button on:click={connect} class="button is-success">Connect</button>
         </p>
