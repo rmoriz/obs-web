@@ -1,7 +1,59 @@
+# NOTES REGARDING THIS REPO/FORK
+
+This is a fork of niek's great obs-web repository mainly to enhance deep linking/bookmarking with username and password due to various reloading issues on mobile devices.
+Yes, this is insecure on shared devices and human readable passwords may appear in browser history etc. - use with care/incognito mode!
+
+See:
+
+- https://github.com/Niek/obs-web/issues/69
+- https://github.com/Niek/obs-web/issues/70
+- https://github.com/Niek/obs-web/issues/71
+
+**Breaking Change: Upstream's deep linking is not supported anymore!**
+
+new format:
+
+```
+
+http://localhost:5000/#host=10.0.0.10:4444&password=Joshua
+
+# localhost:5000 => instance of obs-web
+# 10.0.0.10 => IP of OBS node
+# 4444 => obs-websocket port
+# Joshua => obs-websocket password
+
+```
+
+Have a look at the commits at https://github.com/rmoriz/obs-web/commits/master for more details.
+
+I've no intent to add new features at the moment, please consider the upstream repo as authoritative.
+
+##### Docker images built with github actions:
+
+- **rmoriz/obs-web:latest** (see https://hub.docker.com/r/rmoriz/obs-web/tagsj
+- **ghcr.io/rmoriz/obs-web:latest** (see https://ghcr.io/rmoriz/obs-web:latest)
+
+```shell
+docker run --rm -p 5000:5000 -it rmoriz/obs-web:latest
+```
+
+##### Hosted on GitHub Pages
+
+http://obs.rolandrides.com/
+
+(if this link does not work for you, HSTS preloading for subdomains is still active, I'm sorry.)
+
+Thanks,
+Roland#2543
+
+(unchanged upstream readme follows:)
+
 # OBS-web
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 #### The easiest way to control [OBS](https://obsproject.com/) remotely
