@@ -70,8 +70,9 @@
     }
 
     if (document.location.hash !== '') {
-      // Read host from hash
-      host = document.location.hash.slice(1);
+      let urlParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+      host = urlParams.get('host');
+      password = urlParams.get('password');
       await connect();
     }
   });
@@ -89,6 +90,7 @@
   let host,
     password,
     errorMessage = '';
+
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
@@ -244,14 +246,12 @@
   // OBS events
   obs.on('ConnectionClosed', () => {
     connected = false;
-    window.history.pushState('', document.title, window.location.pathname + window.location.search); // Remove the hash
     console.log('Connection closed');
   });
 
   obs.on('AuthenticationSuccess', async () => {
     console.log('Connected');
     connected = true;
-    document.location.hash = host; // For easy bookmarking
     const version = (await sendCommand('GetVersion')).obsWebsocketVersion || '';
     console.log('OBS-websocket version:', version);
     if (compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) < 0) {
@@ -470,17 +470,20 @@
 
       <p>To get started, enter your OBS host below and click "connect".</p>
 
-      <div class="field is-grouped">
-        <p class="control is-expanded">
-          <input id="host" on:keyup={hostkey} bind:value={host} class="input" type="text" placeholder="localhost:4444" />
-        </p>
-        <p class="control is-expanded">
-          <input id="password" on:keyup={hostkey} bind:value={password} class="input" type="password" placeholder="password" />
-        </p>
-        <p class="control">
-          <button on:click={connect} class="button is-success">Connect</button>
-        </p>
-      </div>
+      <form>
+        <div class="field is-grouped">
+          <p class="control is-expanded">
+            <input id="host" on:keyup={hostkey} bind:value={host} class="input" type="text" placeholder="localhost:4444" />
+          </p>
+          <p class="control is-expanded">
+            <input id="password" on:keyup={hostkey} bind:value={password} class="input" type="password" placeholder="password" autocomplete="current-password" />
+          </p>
+          <p class="control">
+            <button on:click={connect} class="button is-success">Connect</button>
+          </p>
+        </div>
+      </form>
+
       <p class="help">
         Make sure that the
         <a href="https://github.com/Palakis/obs-websocket/releases" target="_blank">obs-websocket plugin</a>
