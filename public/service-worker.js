@@ -1,12 +1,12 @@
 // Incrementing VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
-const VERSION = 2;
-const CACHE_NAME = 'offline';
+const VERSION = 3;
+const CACHE_NAME = `offline-${VERSION}`;
 
 // Customize this with a different URL if needed.
 const cacheFiles = [
   '/',
-  'service-worker.js',
+  '/service-worker.js',
   '/icon/icon-192x192.png',
   '/icon/icon-256x256.png',
   '/icon/icon-384x384.png',
