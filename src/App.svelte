@@ -4,7 +4,18 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiFullscreen, mdiFullscreenExit, mdiBorderVertical, mdiArrowSplitHorizontal, mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiPause, mdiPlayPause } from '@mdi/js';
+  import {
+    mdiFullscreen,
+    mdiFullscreenExit,
+    mdiBorderVertical,
+    mdiArrowSplitHorizontal,
+    mdiAccessPoint,
+    mdiAccessPointOff,
+    mdiRecord,
+    mdiStop,
+    mdiPause,
+    mdiPlayPause,
+  } from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
 
@@ -24,14 +35,13 @@
     if ('wakeLock' in navigator) {
       try {
         wakeLock = await navigator.wakeLock.request('screen');
-          // Re-request when coming back
-          document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible') {
-              wakeLock = await navigator.wakeLock.request('screen');
-            }
-          });
-      }
-      catch(e) { }
+        // Re-request when coming back
+        document.addEventListener('visibilitychange', async () => {
+          if (document.visibilityState === 'visible') {
+            wakeLock = await navigator.wakeLock.request('screen');
+          }
+        });
+      } catch (e) {}
     }
 
     // Listen for fullscreen changes
@@ -50,7 +60,7 @@
     // Hamburger menu
     const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
     if ($navbarBurgers.length > 0) {
-      $navbarBurgers.forEach(el => {
+      $navbarBurgers.forEach((el) => {
         el.addEventListener('click', () => {
           const target = document.getElementById(el.dataset.target);
           el.classList.toggle('is-active');
@@ -82,7 +92,7 @@
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
-    .map(begin => scenes.slice(begin, begin + 4));
+    .map((begin) => scenes.slice(begin, begin + 4));
 
   function toggleFullScreen() {
     if (isFullScreen) {
@@ -150,25 +160,25 @@
     await sendCommand('StopRecording');
   }
 
-  async function pauseRecording(){
+  async function pauseRecording() {
     await sendCommand('PauseRecording');
   }
 
-  async function resumeRecording(){
+  async function resumeRecording() {
     await sendCommand('ResumeRecording');
   }
 
   async function updateScenes() {
     let data = await sendCommand('GetSceneList');
     currentScene = data.currentScene;
-    scenes = data.scenes.filter(i => {
+    scenes = data.scenes.filter((i) => {
       return i.name.indexOf('(hidden)') === -1;
     }); // Skip hidden scenes
     if (isStudioMode) {
       obs
         .send('GetPreviewScene')
-        .then(data => (currentPreviewScene = data.name))
-        .catch(_ => {
+        .then((data) => (currentPreviewScene = data.name))
+        .catch((_) => {
           // Switching off studio mode calls SwitchScenes, which will trigger this
           // before the socket has recieved confirmation of disabled studio mode.
         });
@@ -244,7 +254,7 @@
     document.location.hash = host; // For easy bookmarking
     const version = (await sendCommand('GetVersion')).obsWebsocketVersion || '';
     console.log('OBS-websocket version:', version);
-    if(compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) < 0) {
+    if (compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) < 0) {
       alert('You are running an outdated OBS-websocket (version ' + version + '), please upgrade to the latest version for full compatibility.');
     }
     await sendCommand('SetHeartbeat', { enable: true });
@@ -265,7 +275,7 @@
   });
 
   // Heartbeat
-  obs.on('Heartbeat', data => {
+  obs.on('Heartbeat', (data) => {
     heartbeat = data;
   });
 
@@ -275,7 +285,7 @@
     await updateScenes();
   });
 
-  obs.on('error', err => {
+  obs.on('error', (err) => {
     console.error('Socket error:', err);
   });
 
@@ -289,7 +299,7 @@
     }
   });
 
-  obs.on('PreviewSceneChanged', async(data) => {
+  obs.on('PreviewSceneChanged', async (data) => {
     console.log(`New Preview Scene: ${data.sceneName}`);
     await updateScenes();
   });
@@ -339,9 +349,7 @@
                 <span class="icon">
                   <Icon path={mdiAccessPoint} />
                 </span>
-                <span>
-                  Start stream
-                </span>
+                <span> Start stream </span>
               </a>
             {/if}
             {#if heartbeat && heartbeat.recording}
@@ -350,19 +358,15 @@
                   <span class="icon">
                     <Icon path={mdiPlayPause} />
                   </span>
-                  <span>
-                    Resume recording
-                  </span>
+                  <span> Resume recording </span>
                 </a>
               {:else}
-              <a class="button is-danger" on:click={pauseRecording}>
-                <span class="icon">
-                  <Icon path={mdiPause} />
-                </span>
-                <span>
-                  Pause recording
-                </span>
-              </a>
+                <a class="button is-danger" on:click={pauseRecording}>
+                  <span class="icon">
+                    <Icon path={mdiPause} />
+                  </span>
+                  <span> Pause recording </span>
+                </a>
               {/if}
               <a class="button is-danger" on:click={stopRecording}>
                 <span class="icon">
@@ -372,14 +376,12 @@
                   Stop recording ({heartbeat.totalRecordTime} secs)
                 </span>
               </a>
-              {:else}
+            {:else}
               <a class="button is-danger" on:click={startRecording}>
                 <span class="icon">
                   <Icon path={mdiRecord} />
                 </span>
-                <span>
-                  Start recording
-                </span>
+                <span> Start recording </span>
               </a>
             {/if}
             <a class="button is-danger is-light" on:click={disconnect}>Disconnect</a>
@@ -412,7 +414,7 @@
   <div class="container">
     {#if connected}
       {#if isSceneOnTop}
-        <SceneView isStudioMode={isStudioMode} transitionScene={transitionScene}/>
+        <SceneView {isStudioMode} {transitionScene} />
       {/if}
       {#each sceneChunks as chunk}
         <div class="tile is-ancestor">
@@ -437,7 +439,7 @@
         </div>
       {/each}
       {#if !isSceneOnTop}
-        <SceneView isStudioMode={isStudioMode} transitionScene={transitionScene}/>
+        <SceneView {isStudioMode} {transitionScene} />
       {/if}
     {:else}
       <h1 class="subtitle">
@@ -478,7 +480,6 @@
         <p class="control">
           <button on:click={connect} class="button is-success">Connect</button>
         </p>
-
       </div>
       <p class="help">
         Make sure that the
@@ -487,7 +488,6 @@
       </p>
     {/if}
   </div>
-
 </section>
 
 <footer class="footer">
