@@ -5,16 +5,18 @@
   import { onMount } from 'svelte';
   import './style.scss';
   import {
-    mdiFullscreen,
-    mdiFullscreenExit,
-    mdiBorderVertical,
-    mdiArrowSplitHorizontal,
     mdiAccessPoint,
     mdiAccessPointOff,
-    mdiRecord,
-    mdiStop,
+    mdiArrowSplitHorizontal,
+    mdiBorderVertical,
+    mdiCamera,
+    mdiCameraOff,
+    mdiFullscreen,
+    mdiFullscreenExit,
     mdiPause,
     mdiPlayPause,
+    mdiRecord,
+    mdiStop,
   } from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
@@ -26,10 +28,16 @@
   // Import local components
   import SceneView from './SceneView.svelte';
 
+  let screenshotTimer;
+  let screenshotTimerValue = 1000;
+  let screenshotActive = false;
+  let screenshotFormat = 'jpg';
+
   onMount(async () => {
+    /* o
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js');
-    }
+    }*/
 
     // Request screen wakelock
     if ('wakeLock' in navigator) {
@@ -195,21 +203,36 @@
 
   async function getScreenshot() {
     if (connected) {
-      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: 'png', width: 960, height: 540 });
+      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: screenshotFormat, width: 960, height: 540 });
       if (data && data.img) {
         document.querySelector('#program').src = data.img;
         document.querySelector('#program').className = '';
       }
 
       if (isStudioMode) {
-        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: 'png', width: 960, height: 540 });
+        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: screenshotFormat, width: 960, height: 540 });
         if (data && data.img) {
           document.querySelector('#preview').src = data.img;
           document.querySelector('#preview').classList.remove('is-hidden');
         }
       }
     }
-    setTimeout(getScreenshot, 1000);
+    screenshotTimer = setTimeout(getScreenshot, screenshotTimerValue);
+  }
+
+  async function enableScreenshots() {
+    screenshotActive = true;
+    getScreenshot();
+  }
+
+  async function disableScreenshots() {
+    screenshotActive = false;
+    clearTimeout(screenshotTimer);
+    document.querySelector('#program').className = 'is-hidden';
+
+    if (isStudioMode) {
+      document.querySelector('#preview').className = 'is-hidden';
+    }
   }
 
   async function connect() {
@@ -260,8 +283,10 @@
     await sendCommand('SetHeartbeat', { enable: true });
     await getStudioMode();
     await updateScenes();
-    await getScreenshot();
-    document.querySelector('#program').classList.remove('is-hidden');
+
+    if (screenshotActive) {
+      await getScreenshot();
+    }
   });
 
   obs.on('AuthenticationFailure', async () => {
@@ -335,6 +360,22 @@
                 {Math.round(heartbeat.stats.fps)} fps, {Math.round(heartbeat.stats['cpu-usage'])}% CPU, {heartbeat.stats['output-skipped-frames']} skipped frames
               {:else}Connected{/if}
             </a>
+            {#if screenshotActive}
+              <a class="button is-warning" on:click={disableScreenshots}>
+                <span class="icon">
+                  <Icon path={mdiCameraOff} />
+                </span>
+                <span> Stop Screenshots </span>
+              </a>
+            {:else}
+              <a class="button is-warning is-light" on:click={enableScreenshots}>
+                <span class="icon">
+                  <Icon path={mdiCamera} />
+                </span>
+                <span> Enable Screenshots </span>
+              </a>
+            {/if}
+
             {#if heartbeat && heartbeat.streaming}
               <a class="button is-danger" on:click={stopStream}>
                 <span class="icon">
