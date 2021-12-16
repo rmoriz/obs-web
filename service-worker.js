@@ -1,6 +1,6 @@
 // Incrementing VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
-const VERSION = 3;
+const VERSION = 4;
 const CACHE_NAME = `offline-${VERSION}`;
 
 // Customize this with a different URL if needed.
