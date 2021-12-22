@@ -21,6 +21,8 @@
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
 
+  import { screenshotSettings } from './stores.js';
+
   // Import OBS-websocket
   import OBSWebSocket from 'obs-websocket-js';
   const obs = new OBSWebSocket();
@@ -28,16 +30,12 @@
   // Import local components
   import SceneView from './SceneView.svelte';
 
-  let screenshotTimer;
-  let screenshotTimerValue = 1000;
-  let screenshotActive = false;
-  let screenshotFormat = 'jpg';
-
   onMount(async () => {
-    /* o
+    /**
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js');
-    }*/
+    }
+    **/
 
     // Request screen wakelock
     if ('wakeLock' in navigator) {
@@ -203,31 +201,34 @@
 
   async function getScreenshot() {
     if (connected) {
-      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: screenshotFormat, width: 960, height: 540 });
+      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: $screenshotSettings.imageFormat, width: 960, height: 540 });
       if (data && data.img) {
         document.querySelector('#program').src = data.img;
         document.querySelector('#program').className = '';
       }
 
       if (isStudioMode) {
-        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: screenshotFormat, width: 960, height: 540 });
+        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: $screenshotSettings.imageFormat, width: 960, height: 540 });
         if (data && data.img) {
           document.querySelector('#preview').src = data.img;
           document.querySelector('#preview').classList.remove('is-hidden');
         }
       }
     }
-    screenshotTimer = setTimeout(getScreenshot, screenshotTimerValue);
+
+    $screenshotSettings.timerId = setTimeout(getScreenshot, $screenshotSettings.timerValue);
   }
 
   async function enableScreenshots() {
-    screenshotActive = true;
+    $screenshotSettings.active = true;
     getScreenshot();
   }
 
   async function disableScreenshots() {
-    screenshotActive = false;
-    clearTimeout(screenshotTimer);
+    $screenshotSettings.active = false;
+    clearTimeout($screenshotSettings.timerId);
+    $screenshotSettings.timerId = null;
+
     document.querySelector('#program').className = 'is-hidden';
 
     if (isStudioMode) {
@@ -284,7 +285,7 @@
     await getStudioMode();
     await updateScenes();
 
-    if (screenshotActive) {
+    if ($screenshotSettings.active) {
       await getScreenshot();
     }
   });
@@ -360,7 +361,7 @@
                 {Math.round(heartbeat.stats.fps)} fps, {Math.round(heartbeat.stats['cpu-usage'])}% CPU, {heartbeat.stats['output-skipped-frames']} skipped frames
               {:else}Connected{/if}
             </a>
-            {#if screenshotActive}
+            {#if $screenshotSettings.active}
               <a class="button is-warning" on:click={disableScreenshots}>
                 <span class="icon">
                   <Icon path={mdiCameraOff} />

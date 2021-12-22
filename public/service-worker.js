@@ -4,6 +4,7 @@ const VERSION = 4;
 const CACHE_NAME = `offline-${VERSION}`;
 
 // Customize this with a different URL if needed.
+// prettier-ignore
 const cacheFiles = [
   '/',
   '/service-worker.js',
@@ -12,7 +13,6 @@ const cacheFiles = [
   '/icon/icon-384x384.png',
   '/icon/icon-512x512.png',
 ];
-
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -24,7 +24,7 @@ self.addEventListener('install', (event) => {
       // await cache.add(new Request(OFFLINE_URL, { cache: 'reload' }));
 
       await cache.addAll(cacheFiles);
-    })()
+    })(),
   );
   // Force the waiting service worker to become the active service worker.
   self.skipWaiting();
@@ -38,7 +38,7 @@ self.addEventListener('activate', (event) => {
       if ('navigationPreload' in self.registration) {
         await self.registration.navigationPreload.enable();
       }
-    })()
+    })(),
   );
 
   // Tell the active service worker to take control of the page immediately.
@@ -70,6 +70,6 @@ self.addEventListener('fetch', (event) => {
         cache.put(event.request, response.clone());
         return response;
       });
-    })()
+    })(),
   );
 });
