@@ -9,8 +9,6 @@
     mdiAccessPointOff,
     mdiArrowSplitHorizontal,
     mdiBorderVertical,
-    mdiCamera,
-    mdiCameraOff,
     mdiFullscreen,
     mdiFullscreenExit,
     mdiPause,
@@ -21,14 +19,15 @@
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
 
-  import { screenshotSettings } from './stores.js';
+  import { connected, screenshotSettings, isStudioMode } from './stores.js';
 
   // Import OBS-websocket
   import OBSWebSocket from 'obs-websocket-js';
   const obs = new OBSWebSocket();
 
   // Import local components
-  import SceneView from './SceneView.svelte';
+  import SceneView from './components/SceneView.svelte';
+  import Screenshots from './components/Screenshots.svelte';
 
   onMount(async () => {
     /**
@@ -84,12 +83,10 @@
   });
 
   // State
-  let connected,
-    heartbeat,
+  let heartbeat,
     currentScene,
     currentPreviewScene,
     isFullScreen,
-    isStudioMode,
     isSceneOnTop,
     wakeLock = false;
   let scenes = [];
@@ -182,7 +179,7 @@
     scenes = data.scenes.filter((i) => {
       return i.name.indexOf('(hidden)') === -1;
     }); // Skip hidden scenes
-    if (isStudioMode) {
+    if ($isStudioMode) {
       obs
         .send('GetPreviewScene')
         .then((data) => (currentPreviewScene = data.name))
@@ -196,44 +193,7 @@
 
   async function getStudioMode() {
     let data = await sendCommand('GetStudioModeStatus');
-    isStudioMode = (data && data.studioMode) || false;
-  }
-
-  async function getScreenshot() {
-    if (connected) {
-      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: $screenshotSettings.imageFormat, width: 960, height: 540 });
-      if (data && data.img) {
-        document.querySelector('#program').src = data.img;
-        document.querySelector('#program').className = '';
-      }
-
-      if (isStudioMode) {
-        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: $screenshotSettings.imageFormat, width: 960, height: 540 });
-        if (data && data.img) {
-          document.querySelector('#preview').src = data.img;
-          document.querySelector('#preview').classList.remove('is-hidden');
-        }
-      }
-    }
-
-    $screenshotSettings.timerId = setTimeout(getScreenshot, $screenshotSettings.timerValue);
-  }
-
-  async function enableScreenshots() {
-    $screenshotSettings.active = true;
-    getScreenshot();
-  }
-
-  async function disableScreenshots() {
-    $screenshotSettings.active = false;
-    clearTimeout($screenshotSettings.timerId);
-    $screenshotSettings.timerId = null;
-
-    document.querySelector('#program').className = 'is-hidden';
-
-    if (isStudioMode) {
-      document.querySelector('#preview').className = 'is-hidden';
-    }
+    isStudioMode.set(data && data.studioMode);
   }
 
   async function connect() {
@@ -246,7 +206,7 @@
     }
     console.log('Connecting to:', host, '- secure:', secure, '- using password:', password);
     await disconnect();
-    connected = false;
+    connected.set(false);
     try {
       await obs.connect({ address: host, password, secure });
     } catch (e) {
@@ -257,7 +217,8 @@
 
   async function disconnect() {
     await obs.disconnect();
-    connected = false;
+    connected.set(false);
+
     errorMessage = 'Disconnected';
   }
 
@@ -269,13 +230,14 @@
 
   // OBS events
   obs.on('ConnectionClosed', () => {
-    connected = false;
+    connected.set(false);
     console.log('Connection closed');
   });
 
   obs.on('AuthenticationSuccess', async () => {
     console.log('Connected');
-    connected = true;
+    connected.set(true);
+
     const version = (await sendCommand('GetVersion')).obsWebsocketVersion || '';
     console.log('OBS-websocket version:', version);
     if (compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) < 0) {
@@ -293,7 +255,7 @@
   obs.on('AuthenticationFailure', async () => {
     password = prompt('Please enter your password:', password);
     if (password === null) {
-      connected = false;
+      $connected.set(false);
       password = '';
     } else {
       await connect();
@@ -317,7 +279,7 @@
 
   obs.on('StudioModeSwitched', async (data) => {
     console.log(`Studio Mode: ${data.newState}`);
-    isStudioMode = data.newState;
+    isStudioMode.set(data.newState);
     if (!isStudioMode) {
       currentPreviewScene = false;
     } else {
@@ -355,27 +317,14 @@
       <div class="navbar-item">
         <div class="buttons">
           <!-- svelte-ignore a11y-missing-attribute -->
-          {#if connected}
+          {#if $connected}
             <a class="button is-info is-light" disabled>
               {#if heartbeat}
                 {Math.round(heartbeat.stats.fps)} fps, {Math.round(heartbeat.stats['cpu-usage'])}% CPU, {heartbeat.stats['output-skipped-frames']} skipped frames
               {:else}Connected{/if}
             </a>
-            {#if $screenshotSettings.active}
-              <a class="button is-warning" on:click={disableScreenshots}>
-                <span class="icon">
-                  <Icon path={mdiCameraOff} />
-                </span>
-                <span> Stop Screenshots </span>
-              </a>
-            {:else}
-              <a class="button is-warning is-light" on:click={enableScreenshots}>
-                <span class="icon">
-                  <Icon path={mdiCamera} />
-                </span>
-                <span> Enable Screenshots </span>
-              </a>
-            {/if}
+
+            <Screenshots {sendCommand} {currentScene} {currentPreviewScene} />
 
             {#if heartbeat && heartbeat.streaming}
               <a class="button is-danger" on:click={stopStream}>
@@ -427,7 +376,7 @@
               </a>
             {/if}
             <a class="button is-danger is-light" on:click={disconnect}>Disconnect</a>
-            <a class:is-light={!isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
+            <a class:is-light={!$isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
               <span class="icon">
                 <Icon path={mdiBorderVertical} />
               </span>
@@ -454,9 +403,9 @@
 
 <section class="section">
   <div class="container">
-    {#if connected}
+    {#if $connected}
       {#if isSceneOnTop}
-        <SceneView {isStudioMode} {transitionScene} />
+        <SceneView {transitionScene} />
       {/if}
       {#each sceneChunks as chunk}
         <div class="tile is-ancestor">
@@ -472,7 +421,7 @@
                   <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
                 </a>
               {:else}
-                <a on:click={isStudioMode ? setPreview : setScene} class="tile is-child is-info notification">
+                <a on:click={$isStudioMode ? setPreview : setScene} class="tile is-child is-info notification">
                   <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
                 </a>
               {/if}
@@ -481,7 +430,7 @@
         </div>
       {/each}
       {#if !isSceneOnTop}
-        <SceneView {isStudioMode} {transitionScene} />
+        <SceneView {transitionScene} />
       {/if}
     {:else}
       <h1 class="subtitle">

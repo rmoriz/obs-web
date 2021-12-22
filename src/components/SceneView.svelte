@@ -1,10 +1,11 @@
 <script>
-  export let isStudioMode;
+  import { connected, screenshotSettings, isStudioMode } from '../stores.js';
+
   export let transitionScene;
 </script>
 
 <div class="columns is-centered is-vcentered has-text-centered">
-  {#if isStudioMode}
+  {#if $isStudioMode}
     <div class="column">
       <img id="preview" class="is-hidden has-background-dark" alt="Preview" />
     </div>

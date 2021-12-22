@@ -6,3 +6,6 @@ export const screenshotSettings = writable({
   active: false,
   imageFormat: 'jpg',
 });
+
+export const connected = writable(false);
+export const isStudioMode = writable(false);
