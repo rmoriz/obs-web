@@ -429,7 +429,7 @@
                 <a class="tile is-child is-primary notification">
                   <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
                 </a>
-              {:else if currentPreviewScene == sc.name}
+              {:else if $isStudioMode && currentPreviewScene == sc.name}
                 <a on:click={setScene} class="tile is-child is-warning notification">
                   <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
                 </a>
