@@ -1,5 +1,5 @@
 <script>
-  const OBS_WEBSOCKET_LATEST_VERSION = '4.8.0'; // https://api.github.com/repos/Palakis/obs-websocket/releases/latest
+  const OBS_WEBSOCKET_LATEST_VERSION = '4.9.1'; // https://api.github.com/repos/Palakis/obs-websocket/releases/latest
 
   // Imports
   import { onMount } from 'svelte';
@@ -19,7 +19,7 @@
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
 
-  import { connected, screenshotSettings, isStudioMode } from './stores.js';
+  import { isConnected, isStudioMode, obsConnection, screenshotSettings } from './stores.js';
 
   // Import OBS-websocket
   import OBSWebSocket from 'obs-websocket-js';
@@ -74,10 +74,18 @@
       });
     }
 
-    if (document.location.hash !== '') {
+    if (document.location.hash) {
+      console.log(`document.location.hash: ${document.location.hash}`);
       let urlParams = new URLSearchParams(window.location.hash.replace('#', '?'));
-      host = urlParams.get('host');
-      password = urlParams.get('password');
+
+      if (urlParams.get('host')) {
+        $obsConnection.host = urlParams.get('host');
+      }
+
+      if (urlParams.get('password')) {
+        $obsConnection.password = urlParams.get('password');
+      }
+
       await connect();
     }
   });
@@ -90,9 +98,7 @@
     isSceneOnTop,
     wakeLock = false;
   let scenes = [];
-  let host,
-    password,
-    errorMessage = '';
+  let errorMessage = '';
 
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
@@ -197,8 +203,10 @@
   }
 
   async function connect() {
-    host = host || 'localhost:4444';
+    let host = $obsConnection.host;
+    let password = $obsConnection.password;
     let secure = location.protocol === 'https:' || host.endsWith(':443');
+
     if (host.indexOf('://') !== -1) {
       let url = new URL(host);
       secure = url.protocol === 'wss:' || url.protocol === 'https:';
@@ -206,18 +214,20 @@
     }
     console.log('Connecting to:', host, '- secure:', secure, '- using password:', password);
     await disconnect();
-    connected.set(false);
+    $isConnected = false;
+
     try {
       await obs.connect({ address: host, password, secure });
     } catch (e) {
-      console.log(e);
+      console.log(`Error: $e`);
       errorMessage = e.description;
     }
   }
 
   async function disconnect() {
     await obs.disconnect();
-    connected.set(false);
+    console.log('Disconnected');
+    $isConnected = false;
 
     errorMessage = 'Disconnected';
   }
@@ -230,13 +240,14 @@
 
   // OBS events
   obs.on('ConnectionClosed', () => {
-    connected.set(false);
+    $isConnected = false;
     console.log('Connection closed');
   });
 
   obs.on('AuthenticationSuccess', async () => {
-    console.log('Connected');
-    connected.set(true);
+    console.log('Connected: AuthenticationSuccess');
+
+    $isConnected = true;
 
     const version = (await sendCommand('GetVersion')).obsWebsocketVersion || '';
     console.log('OBS-websocket version:', version);
@@ -253,10 +264,12 @@
   });
 
   obs.on('AuthenticationFailure', async () => {
-    password = prompt('Please enter your password:', password);
+    console.log('Authentication failure');
+    $obsConnection.password = prompt('Please enter your password:', $obsConnection.password);
     if (password === null) {
-      $connected.set(false);
-      password = '';
+      $isConnected = false;
+      $obsConnection.password = '';
+      console.log('no password');
     } else {
       await connect();
     }
@@ -317,7 +330,7 @@
       <div class="navbar-item">
         <div class="buttons">
           <!-- svelte-ignore a11y-missing-attribute -->
-          {#if $connected}
+          {#if $isConnected}
             <a class="button is-info is-light" disabled>
               {#if heartbeat}
                 {Math.round(heartbeat.stats.fps)} fps, {Math.round(heartbeat.stats['cpu-usage'])}% CPU, {heartbeat.stats['output-skipped-frames']} skipped frames
@@ -403,7 +416,7 @@
 
 <section class="section">
   <div class="container">
-    {#if $connected}
+    {#if $isConnected}
       {#if isSceneOnTop}
         <SceneView {transitionScene} />
       {/if}
@@ -464,13 +477,21 @@
       <form>
         <div class="field is-grouped">
           <p class="control is-expanded">
-            <input id="host" on:keyup={hostkey} bind:value={host} class="input" type="text" placeholder="localhost:4444" />
+            <input id="host" on:keyup={hostkey} bind:value={$obsConnection.host} class="input" type="text" placeholder={$obsConnection.host} />
           </p>
           <p class="control is-expanded">
-            <input id="password" on:keyup={hostkey} bind:value={password} class="input" type="password" placeholder="password" autocomplete="current-password" />
+            <input
+              id="password"
+              on:keyup={hostkey}
+              bind:value={$obsConnection.password}
+              class="input"
+              type="password"
+              placeholder={$obsConnection.password}
+              autocomplete="current-password"
+            />
           </p>
           <p class="control">
-            <button on:click={connect} class="button is-success">Connect</button>
+            <button on:click|preventDefault={connect} class="button is-success">Connect</button>
           </p>
         </div>
       </form>

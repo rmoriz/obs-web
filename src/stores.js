@@ -7,5 +7,10 @@ export const screenshotSettings = writable({
   imageFormat: 'jpg',
 });
 
-export const connected = writable(false);
+export const obsConnection = writable({
+  host: 'localhost:4444',
+  password: '',
+});
+
+export const isConnected = writable(false);
 export const isStudioMode = writable(false);

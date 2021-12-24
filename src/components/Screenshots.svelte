@@ -2,7 +2,7 @@
   import { mdiCamera, mdiCameraOff } from '@mdi/js';
   import Icon from 'mdi-svelte';
 
-  import { connected, screenshotSettings, isStudioMode } from '../stores.js';
+  import { isConnected, screenshotSettings, isStudioMode } from '../stores.js';
 
   async function enableScreenshots() {
     $screenshotSettings.active = true;
@@ -22,7 +22,7 @@
   }
 
   async function getScreenshot() {
-    if ($connected) {
+    if ($isConnected) {
       let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: $screenshotSettings.imageFormat, width: 960, height: 540 });
       if (data && data.img) {
         document.querySelector('#program').src = data.img;

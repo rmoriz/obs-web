@@ -1,5 +1,5 @@
 <script>
-  import { connected, screenshotSettings, isStudioMode } from '../stores.js';
+  import { isStudioMode } from '../stores.js';
 
   export let transitionScene;
 </script>
