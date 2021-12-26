@@ -28,6 +28,7 @@
   // Import local components
   import SceneView from './components/SceneView.svelte';
   import Screenshots from './components/Screenshots.svelte';
+  import Footer from './components/Footer.svelte';
 
   onMount(async () => {
     /**
@@ -505,15 +506,4 @@
   </div>
 </section>
 
-<footer class="footer">
-  <div class="content has-text-centered">
-    <p>
-      <strong>OBS-web</strong>
-      by
-      <a href="https://niekvandermaas.nl/">Niek van der Maas</a>
-      &mdash; see
-      <a href="https://github.com/Niek/obs-web">GitHub</a>
-      for source code.
-    </p>
-  </div>
-</footer>
+<Footer />
