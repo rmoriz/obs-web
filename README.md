@@ -26,11 +26,12 @@ http://localhost:5000/#host=10.0.0.10:4444&password=Joshua
 
 Have a look at the commits at https://github.com/rmoriz/obs-web/commits/master for more details.
 
-I've no intent to add new features at the moment, please consider the upstream repo as authoritative.
+[compare this fork with upstream](https://github.com/Niek/obs-web/compare/master...rmoriz:master)
+
 
 ##### Docker images built with github actions:
 
-- **rmoriz/obs-web:latest** (see https://hub.docker.com/r/rmoriz/obs-web/tagsj
+- **rmoriz/obs-web:latest** (see https://hub.docker.com/r/rmoriz/obs-web/tags)
 - **ghcr.io/rmoriz/obs-web:latest** (see https://ghcr.io/rmoriz/obs-web:latest)
 
 ```shell
